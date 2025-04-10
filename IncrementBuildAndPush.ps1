@@ -1,8 +1,56 @@
 param(
     # Path to the project file; adjust this default value if needed.
-    [string]$ProjectFilePath = "src\GitHubService\TirsvadCLI.GitHubService\TirsvadCLI.GitHubService.csproj"
+    [string]$ProjectFilePath = "src\GitHubService\TirsvadCLI.GitHubService\TirsvadCLI.GitHubService.csproj",
+    # Path to the NuGet API key for authentication.
+    [string]$NuGetApiKey = "",
+    # NuGet source URL (default is nuget.org).
+    [string]$NuGetSource = "https://api.nuget.org/v3/index.json"
 )
 
+# Build the project in Release mode.
+Write-Output "Building the project in Release mode..."
+& dotnet build $ProjectFilePath -c Release
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build failed. Please check the output for errors."
+    exit 1
+}
+
+Write-Output "Build succeeded in Release mode."
+
+# Pack the project to create a NuGet package.
+Write-Output "Packing the project to create a NuGet package..."
+& dotnet pack $ProjectFilePath -c Release --no-build
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Packing failed. Please check the output for errors."
+    exit 1
+}
+
+Write-Output "NuGet package created successfully."
+
+# Find the generated .nupkg file.
+$projectDirectory = Split-Path -Path $ProjectFilePath -Parent
+$packagePath = Get-ChildItem -Path $projectDirectory\bin\Release -Filter *.nupkg | Select-Object -ExpandProperty FullName
+
+if (-not $packagePath) {
+    Write-Error "NuGet package not found in the expected directory."
+    exit 1
+}
+
+Write-Output "Found NuGet package: $packagePath"
+
+# Push the NuGet package to the specified source.
+Write-Output "Pushing the NuGet package to $NuGetSource..."
+& dotnet nuget push $packagePath --api-key $NuGetApiKey --source $NuGetSource
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to push the NuGet package. Please check the output for errors."
+    exit 1
+}
+
+Write-Output "NuGet package uploaded successfully to $NuGetSource."
+Write-Output "Build succeeded in Release mode."
 # Verify the project file exists.
 if (!(Test-Path $ProjectFilePath)) {
     Write-Error "Project file does not exist at path: $ProjectFilePath"
