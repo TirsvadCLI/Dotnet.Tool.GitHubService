@@ -36,30 +36,50 @@ public class GitHubService
             // Construct the API URL with pagination parameters.
             var url = $"https://api.github.com/orgs/{organization}/repos?per_page={perPage}&page={page}";
             var response = await _httpClient.GetAsync(url);
+
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"Error fetching repositories: {response.ReasonPhrase}");
-                break;
+                return repositories;
             }
 
             var content = await response.Content.ReadAsStringAsync();
-            // Deserialize the JSON array into a list of repositories.
-            var reposPage = JsonSerializer.Deserialize<List<GitHubRepository>>(content, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
 
-            if (reposPage == null || reposPage.Count == 0)
+            try
             {
-                hasMore = false; // Exit the loop when no more items are returned.
+                // Deserialize the JSON array into a list of repositories.
+                var reposPage = JsonSerializer.Deserialize<List<GitHubRepository>>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (reposPage == null || reposPage.Count == 0)
+                {
+                    hasMore = false; // Exit the loop when no more items are returned.
+                }
+                else
+                {
+                    // Check if the current page's content is identical to the previous page's content.
+                    if (repositories.Any() && repositories.TakeLast(perPage).SequenceEqual(reposPage))
+                    {
+                        Console.WriteLine("Duplicate page detected. Stopping further requests.");
+                        hasMore = false;
+                    }
+                    else
+                    {
+                        repositories.AddRange(reposPage);
+                        page++; // Move to the next page.
+                    }
+                }
             }
-            else
+            catch (JsonException ex)
             {
-                repositories.AddRange(reposPage);
-                page++; // Move to the next page.
+                Console.WriteLine($"Error deserializing response content: {ex.Message}");
+                return repositories;
             }
         }
 
         return repositories;
     }
+
 }
