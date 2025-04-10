@@ -11,6 +11,27 @@ param(
     [string]$CertificatePassword = "$env:CertTirsvadPassword" # Replace with your actual password or set it in the environment variable.
 ) 
 
+if (!
+    #current role
+    (New-Object Security.Principal.WindowsPrincipal(
+        [Security.Principal.WindowsIdentity]::GetCurrent()
+    #is admin?
+    )).IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator
+    )
+) {
+    #elevate script and exit current non-elevated runtime
+    Start-Process `
+        -FilePath 'powershell' `
+        -ArgumentList (
+            #flatten to single array
+            '-File', $MyInvocation.MyCommand.Source, $args `
+            | %{ $_ }
+        ) `
+        -Verb RunAs
+    exit
+}
+
 # Verify the project file exists.
 if (!(Test-Path $ProjectFilePath)) {
     Write-Error "Project file does not exist at path: $ProjectFilePath"
