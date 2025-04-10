@@ -6,12 +6,18 @@
 [![MIT License][license-shield]][license-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
-# ![Logo][Logo] GitHub Service
+# ![Logo][Logo] GitHub Service Helper
 
 ## Table of Contents
 - [Introduction](#introduction)
 - [Folder Structure](#folder-structure)
 - [Usage](#usage)
+- [Example](#example)
+- [Contributing](#contributing)
+- [Bug / Issue Reporting](#bug--issue-reporting)
+- [License](#license)
+- [Contact](#contact)
+- [Acknowledgements](#acknowledgements)
 
 ## Introduction
 This project provides a GitHub service for retrieving repository information from an organization.
@@ -21,6 +27,34 @@ This project provides a GitHub service for retrieving repository information fro
 ## Usage
 To use this service, configure the `GitHubService` class with an `HttpClient` and call the `GetOrganizationRepositoriesAsync` method with the desired organization name.
 
+## Example
+Here is an example of how to use the `GitHubService` class to retrieve repositories for a GitHub organization:
+
+```csharp
+using System; using System.Net.Http; using System.Threading.Tasks; using TirsvadCLI.GitHubService;
+class Program { static async Task Main(string[] args) { // Create an instance of HttpClient using var httpClient = new HttpClient();
+    // Create an instance of GitHubService
+    var gitHubService = new GitHubService(httpClient);
+
+    // Specify the organization name
+    string organization = "dotnet";
+
+    // Fetch repositories
+    var repositories = await gitHubService.GetOrganizationRepositoriesAsync(organization);
+
+    // Display the repositories
+    Console.WriteLine($"Repositories for organization '{organization}':");
+    foreach (var repo in repositories)
+    {
+        Console.WriteLine($"- {repo.Name} ({repo.HtmlUrl})");
+    }
+}
+}
+```
+
+### Output
+When you run the above example, it will fetch and display the list of repositories for the specified organization (e.g., `dotnet`).
+
 ## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -28,6 +62,7 @@ Contributions are what make the open-source community such an amazing place to l
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+   - **Note**: Before committing, ensure you have created appropriate tests for your changes. This helps maintain the quality and reliability of the project.
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
